@@ -5,6 +5,13 @@ from modules.pdb_api import search_pdb
 from modules.downloader import download_structures
 from modules.report_generator import generate_report
 
+# NEW: RAG imports
+from modules.rag_database import (
+    fetch_pubmed_abstracts,
+    create_vector_database,
+    search_vector_database
+)
+
 
 def run_agent():
 
@@ -29,7 +36,29 @@ def run_agent():
     print("Downloading structures...")
     files = download_structures(pdb_ids)
 
-    print("Generating report...")
+    # ============================
+    # NEW: RAG workflow
+    # ============================
+    print("Fetching PubMed abstracts...")
+    abstracts = fetch_pubmed_abstracts(pubmed_ids)
+
+    print("Creating knowledge database...")
+    index, texts = create_vector_database(abstracts)
+
+    print("Finding most relevant research...")
+    rag_results = search_vector_database(
+        compound + " treatment",
+        index,
+        texts
+    )
+
+    print("\nMost relevant research preview:")
+    print(rag_results[0][:300])
+
+    # ============================
+    # Generate report
+    # ============================
+    print("\nGenerating report...")
     generate_report(compound_data, gene_id, pubmed_ids, pdb_ids, files)
 
     print("\nDone. Report saved as report.txt")
