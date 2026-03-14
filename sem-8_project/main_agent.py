@@ -1,68 +1,70 @@
-from modules.pubchem_api import get_pubchem
 from modules.pubmed_api import get_pubmed
-from modules.ncbi_api import get_gene
-from modules.pdb_api import search_pdb
-from modules.downloader import download_structures
-from modules.report_generator import generate_report
-
-# NEW: RAG imports
 from modules.rag_database import (
     fetch_pubmed_abstracts,
     create_vector_database,
-    search_vector_database
+    search_vector_database,
+    generate_answer
 )
+
+
+def extract_topic(question):
+
+    stopwords = {
+        "how", "what", "why", "when", "does",
+        "do", "is", "are", "the", "a", "an"
+    }
+
+    words = question.lower().split()
+
+    for word in words:
+        if word not in stopwords:
+            return word
+
+    return words[0]
 
 
 def run_agent():
 
-    print("\n=== AgentDKI Drug Discovery Agent ===")
+    print("\n=== AgentDKI Biomedical Research Assistant ===")
 
-    compound = input("Enter compound name: ")
-    gene = input("Enter gene name: ")
-    protein = input("Enter protein name: ")
+    while True:
 
-    print("\nRetrieving PubChem data...")
-    compound_data = get_pubchem(compound)
+        question = input("\nAsk a biomedical question (type 'exit' to stop): ")
 
-    print("Retrieving PubMed papers...")
-    pubmed_ids = get_pubmed(compound)
+        if question.lower() == "exit":
+            break
 
-    print("Retrieving Gene info...")
-    gene_id = get_gene(gene)
+        topic = extract_topic(question)
 
-    print("Searching PDB structures...")
-    pdb_ids = search_pdb(protein)
+        print("\nSearching PubMed for:", topic)
 
-    print("Downloading structures...")
-    files = download_structures(pdb_ids)
+        pubmed_ids = get_pubmed(topic)
 
-    # ============================
-    # NEW: RAG workflow
-    # ============================
-    print("Fetching PubMed abstracts...")
-    abstracts = fetch_pubmed_abstracts(pubmed_ids)
+        if len(pubmed_ids) == 0:
+            print("No papers found.")
+            continue
 
-    print("Creating knowledge database...")
-    index, texts = create_vector_database(abstracts)
+        abstracts = fetch_pubmed_abstracts(pubmed_ids)
 
-    print("Finding most relevant research...")
-    rag_results = search_vector_database(
-        compound + " treatment",
+        if len(abstracts) == 0:
+            print("No abstracts retrieved.")
+            continue
 
-        index,
-        texts
-    )
+        print("\nBuilding knowledge base...")
 
-    print("\nMost relevant research preview:")
-    print(rag_results[0][:300])
+        index, texts = create_vector_database(abstracts)
 
-    # ============================
-    # Generate report
-    # ============================
-    print("\nGenerating report...")
-    generate_report(compound_data, gene_id, pubmed_ids, pdb_ids, files)
+        print("Knowledge base ready.")
 
-    print("\nDone. Report saved as report.txt")
+        results = search_vector_database(question, index, texts)
+
+        print("\nMost relevant research abstracts:\n")
+
+        for i, r in enumerate(results, 1):
+            print(f"\nResult {i}:\n")
+            print(r[:500])
+
+        generate_answer(question, results)
 
 
 if __name__ == "__main__":

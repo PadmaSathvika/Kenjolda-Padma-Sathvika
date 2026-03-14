@@ -9,7 +9,7 @@ def get_pubmed(query):
         "db": "pubmed",
         "term": query,
         "retmode": "json",
-        "retmax": 5
+        "retmax": 50
     }
 
     response = requests.get(url, params=params)

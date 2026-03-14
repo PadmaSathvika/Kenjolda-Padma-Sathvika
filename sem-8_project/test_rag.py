@@ -2,7 +2,8 @@ from modules.pubmed_api import get_pubmed
 from modules.rag_database import (
     fetch_pubmed_abstracts,
     create_vector_database,
-    search_vector_database
+    search_vector_database,
+    generate_answer
 )
 
 
@@ -18,34 +19,34 @@ print("\nFetching abstracts...")
 abstracts = fetch_pubmed_abstracts(ids)
 
 
-print("\nFirst abstract ID:")
-print(abstracts[0]["id"])
-
-
-print("\nFirst abstract preview:")
-print(abstracts[0]["abstract"][:300])
-
-
 print("\nCreating vector database...")
 
 index, texts = create_vector_database(abstracts)
-
 
 print("Vector database created successfully")
 print("Total stored documents:", index.ntotal)
 
 
 # ============================
-# NEW PART: Semantic search
+# NLP QUESTION SYSTEM
 # ============================
-print("\nSearching database...")
 
-results = search_vector_database(
-    "aspirin treatment",
-    index,
-    texts
-)
+print("\n=== Biomedical Question System ===")
 
+while True:
 
-print("\nTop result preview:")
-print(results[0][:300])
+    question = input("\nAsk a biomedical question (type 'exit' to stop): ")
+
+    if question.lower() == "exit":
+        break
+
+    results = search_vector_database(question, index, texts)
+
+    print("\nMost relevant research abstracts:\n")
+
+    for i, r in enumerate(results, 1):
+
+        print(f"\nResult {i}:\n")
+        print(r[:500])
+
+    generate_answer(question, results)

@@ -1,18 +1,21 @@
 import requests
 import faiss
 import numpy as np
+import re
 from sentence_transformers import SentenceTransformer
 
 
 # ============================
 # Load embedding model
 # ============================
+
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
 
 # ============================
 # Fetch PubMed abstracts
 # ============================
+
 def fetch_pubmed_abstracts(pubmed_ids):
 
     abstracts = []
@@ -43,8 +46,9 @@ def fetch_pubmed_abstracts(pubmed_ids):
 
 
 # ============================
-# Create FAISS vector database
+# Create vector database
 # ============================
+
 def create_vector_database(abstracts):
 
     texts = [item["abstract"] for item in abstracts]
@@ -65,7 +69,8 @@ def create_vector_database(abstracts):
 # ============================
 # Search vector database
 # ============================
-def search_vector_database(query, index, texts, top_k=2):
+
+def search_vector_database(query, index, texts, top_k=3):
 
     query_embedding = model.encode([query])
 
@@ -79,3 +84,61 @@ def search_vector_database(query, index, texts, top_k=2):
         results.append(texts[idx])
 
     return results
+
+
+# ============================
+# Clean PubMed text
+# ============================
+
+def clean_text(text):
+
+    text = text.replace("\n", " ")
+
+    text = re.sub(r"\d+\.", "", text)  # remove numbering like "1."
+
+    text = re.sub(r"\s+", " ", text)
+
+    return text
+
+
+# ============================
+# Generate answer
+# ============================
+
+def generate_answer(question, results):
+
+    print("\n=== Generated Scientific Answer ===\n")
+
+    combined = ""
+
+    for r in results:
+        combined += " " + clean_text(r)
+
+    sentences = combined.split(". ")
+
+    filtered = []
+
+    for s in sentences:
+
+        s = s.strip()
+
+        # remove metadata
+        if any(x in s.lower() for x in [
+            "doi",
+            "author information",
+            "department",
+            "university",
+            "journal",
+            "online ahead",
+            "collection",
+            "contributed equally"
+        ]):
+            continue
+
+        if len(s) > 60:
+            filtered.append(s)
+
+    summary = filtered[:4]
+
+    for s in summary:
+        print(s + ".")
