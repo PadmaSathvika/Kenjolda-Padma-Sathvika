@@ -48,6 +48,7 @@ def run_agent():
     print("Finding most relevant research...")
     rag_results = search_vector_database(
         compound + " treatment",
+
         index,
         texts
     )
