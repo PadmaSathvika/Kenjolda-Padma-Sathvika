@@ -31,16 +31,19 @@ def fetch_pubmed_abstracts(pubmed_ids):
             "rettype": "abstract"
         }
 
-        response = requests.get(url, params=params)
+        try:
+            response = requests.get(url, params=params, timeout=10)
 
-        if response.status_code == 200:
+            if response.status_code == 200:
+                text = response.text.strip()
+                abstracts.append({
+                    "id": pid,
+                    "abstract": text
+                })
 
-            text = response.text.strip()
-
-            abstracts.append({
-                "id": pid,
-                "abstract": text
-            })
+        except Exception as e:
+            print(f"[Warning] Could not fetch abstract for {pid}: {e}")
+            continue
 
     return abstracts
 
@@ -94,7 +97,7 @@ def clean_text(text):
 
     text = text.replace("\n", " ")
 
-    text = re.sub(r"\d+\.", "", text)  # remove numbering like "1."
+    text = re.sub(r"\d+\.", "", text)
 
     text = re.sub(r"\s+", " ", text)
 
@@ -122,7 +125,6 @@ def generate_answer(question, results):
 
         s = s.strip()
 
-        # remove metadata
         if any(x in s.lower() for x in [
             "doi",
             "author information",
