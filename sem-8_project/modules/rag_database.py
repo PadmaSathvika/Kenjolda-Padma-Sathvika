@@ -13,7 +13,7 @@ model = SentenceTransformer("all-MiniLM-L6-v2")
 
 
 # ============================
-# Fetch PubMed abstracts
+# Fetch PubMed abstracts with metadata
 # ============================
 
 def fetch_pubmed_abstracts(pubmed_ids):
@@ -27,7 +27,7 @@ def fetch_pubmed_abstracts(pubmed_ids):
         params = {
             "db": "pubmed",
             "id": pid,
-            "retmode": "text",
+            "retmode": "xml",
             "rettype": "abstract"
         }
 
@@ -35,11 +35,50 @@ def fetch_pubmed_abstracts(pubmed_ids):
             response = requests.get(url, params=params, timeout=10)
 
             if response.status_code == 200:
-                text = response.text.strip()
-                abstracts.append({
-                    "id": pid,
-                    "abstract": text
-                })
+                text = response.text
+
+                # Extract title
+                title = ""
+                title_match = re.search(r"<ArticleTitle>(.*?)</ArticleTitle>", text, re.DOTALL)
+                if title_match:
+                    title = re.sub(r"<.*?>", "", title_match.group(1)).strip()
+
+                # Extract abstract
+                abstract = ""
+                abstract_match = re.search(r"<AbstractText.*?>(.*?)</AbstractText>", text, re.DOTALL)
+                if abstract_match:
+                    abstract = re.sub(r"<.*?>", "", abstract_match.group(1)).strip()
+
+                # Extract year
+                year = ""
+                year_match = re.search(r"<PubDate>.*?<Year>(.*?)</Year>", text, re.DOTALL)
+                if year_match:
+                    year = year_match.group(1).strip()
+
+                # Extract journal
+                journal = ""
+                journal_match = re.search(r"<Title>(.*?)</Title>", text, re.DOTALL)
+                if journal_match:
+                    journal = re.sub(r"<.*?>", "", journal_match.group(1)).strip()
+
+                # Extract authors
+                authors = []
+                author_matches = re.findall(r"<LastName>(.*?)</LastName>", text)
+                for a in author_matches[:3]:
+                    authors.append(a.strip())
+                author_str = ", ".join(authors)
+                if len(author_matches) > 3:
+                    author_str += " et al."
+
+                if abstract:
+                    abstracts.append({
+                        "id": pid,
+                        "title": title,
+                        "abstract": abstract,
+                        "year": year,
+                        "journal": journal,
+                        "authors": author_str
+                    })
 
         except Exception as e:
             print(f"[Warning] Could not fetch abstract for {pid}: {e}")
@@ -49,98 +88,71 @@ def fetch_pubmed_abstracts(pubmed_ids):
 
 
 # ============================
-# Create vector database
+# Create vector database with metadata
 # ============================
 
 def create_vector_database(abstracts):
 
-    texts = [item["abstract"] for item in abstracts]
+    texts = []
+    metadata = []
+
+    for item in abstracts:
+        # Combine title + abstract for better embedding
+        combined = f"{item['title']}. {item['abstract']}"
+        texts.append(combined)
+        metadata.append({
+            "id": item["id"],
+            "title": item["title"],
+            "year": item["year"],
+            "journal": item["journal"],
+            "authors": item["authors"]
+        })
 
     embeddings = model.encode(texts)
-
     embeddings = np.array(embeddings).astype("float32")
 
     dimension = embeddings.shape[1]
-
     index = faiss.IndexFlatL2(dimension)
-
     index.add(embeddings)
 
-    return index, texts
+    return index, texts, metadata
 
 
 # ============================
-# Search vector database
+# Search vector database with filtering
 # ============================
 
-def search_vector_database(query, index, texts, top_k=3):
+def search_vector_database(query, index, texts, metadata, top_k=3, year_filter=None):
 
     query_embedding = model.encode([query])
-
     query_embedding = np.array(query_embedding).astype("float32")
 
-    distances, indices = index.search(query_embedding, top_k)
+    # Search more results to allow filtering
+    distances, indices = index.search(query_embedding, top_k * 3)
 
     results = []
 
-    for idx in indices[0]:
-        results.append(texts[idx])
-
-    return results
-
-
-# ============================
-# Clean PubMed text
-# ============================
-
-def clean_text(text):
-
-    text = text.replace("\n", " ")
-
-    text = re.sub(r"\d+\.", "", text)
-
-    text = re.sub(r"\s+", " ", text)
-
-    return text
-
-
-# ============================
-# Generate answer
-# ============================
-
-def generate_answer(question, results):
-
-    print("\n=== Generated Scientific Answer ===\n")
-
-    combined = ""
-
-    for r in results:
-        combined += " " + clean_text(r)
-
-    sentences = combined.split(". ")
-
-    filtered = []
-
-    for s in sentences:
-
-        s = s.strip()
-
-        if any(x in s.lower() for x in [
-            "doi",
-            "author information",
-            "department",
-            "university",
-            "journal",
-            "online ahead",
-            "collection",
-            "contributed equally"
-        ]):
+    for i, idx in enumerate(indices[0]):
+        if idx >= len(texts):
             continue
 
-        if len(s) > 60:
-            filtered.append(s)
+        meta = metadata[idx]
 
-    summary = filtered[:4]
+        # Apply year filter if specified
+        if year_filter and meta["year"]:
+            try:
+                if int(meta["year"]) < year_filter:
+                    continue
+            except:
+                pass
 
-    for s in summary:
-        print(s + ".")
+        results.append({
+            "text": texts[idx],
+            "metadata": meta,
+            "score": float(distances[0][i])
+        })
+
+        if len(results) >= top_k:
+            break
+
+    return results

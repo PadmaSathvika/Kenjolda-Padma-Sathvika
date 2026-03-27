@@ -1,15 +1,19 @@
 import os
 import nltk
 from dotenv import load_dotenv
-from nltk.tokenize import word_tokenize, sent_tokenize
+from nltk.tokenize import word_tokenize
 from nltk.tag import pos_tag
 from nltk.corpus import stopwords
+from groq import Groq
 from modules.pubmed_api import get_pubmed
 from modules.pdb_api import search_pdb
 from modules.pubchem_api import get_pubchem
 from modules.ncbi_api import get_gene
 from modules.downloader import download_structures
-from modules.groq_api import initialize_groq, ask_groq
+from modules.pdb_cleaner import clean_pdb_files, extract_pdb_info, clean_all_pdb_in_folder
+from modules.tool_agent import decide_tools, generate_plan, synthesize_answer
+from modules.report_generator import generate_report
+from modules.docking import run_docking_pipeline
 from modules.rag_database import (
     fetch_pubmed_abstracts,
     create_vector_database,
@@ -41,7 +45,10 @@ def extract_topic_nlp(question):
     tokens = word_tokenize(question)
     tagged = pos_tag(tokens)
     stop_words = set(stopwords.words("english"))
-    generic = {"role", "effect", "use", "function", "discovery", "research", "study"}
+    generic = {
+        "role", "effect", "use", "function", "discovery",
+        "research", "study", "tell", "explain", "describe"
+    }
 
     nouns = []
     for word, tag in tagged:
@@ -72,11 +79,14 @@ def run_agent():
         return
 
     print("\nInitializing Groq AI...")
-    groq_client = initialize_groq(api_key)
-    print("Groq ready.")
+    groq_client = Groq(api_key=api_key)
+    print("Groq AI ready.")
 
-    print("\n=== AgentDKI Drug Discovery Research Assistant ===")
-    print("Powered by PubMed + PDB + PubChem + NCBI + RAG + NLTK + Groq AI\n")
+    print("\n" + "=" * 60)
+    print("   AgentDKI Drug Discovery Research Assistant")
+    print("   Powered by PubMed + PDB + PubChem + NCBI")
+    print("   RAG + NLTK + Tool Calling + Groq AI")
+    print("=" * 60)
 
     while True:
 
@@ -90,128 +100,195 @@ def run_agent():
             print("Please enter a valid question.")
             continue
 
-        # Step 1: Extract topic using NLTK
-        topic = extract_topic_nlp(question)
-        print(f"\n[NLTK] Extracted search topic: '{topic}'")
+        print("\n" + "=" * 60)
 
         # ============================
-        # Step 2: PubMed Search
+        # Step 1: NLP Topic Extraction
         # ============================
-        print(f"\n[PubMed] Searching for papers on: {topic}")
-        pubmed_ids = get_pubmed(topic)
+        topic = extract_topic_nlp(question)
+        print(f"[NLTK] Extracted search topic: '{topic}'")
+
+        # ============================
+        # Step 2: Tool Calling Logic
+        # ============================
+        selected_tools = decide_tools(question)
+        print(f"\n[Tool Agent] Selected tools: {', '.join(selected_tools)}")
+
+        # ============================
+        # Step 3: Multi-Step Reasoning Plan
+        # ============================
+        print("\n[Tool Agent] Generating reasoning plan...")
+        plan = generate_plan(question, selected_tools, groq_client)
+        print("\n[Reasoning Plan]")
+        print("-" * 60)
+        print(plan)
+        print("-" * 60)
+
+        # ============================
+        # Step 4: Execute Tools
+        # ============================
+
+        collected_data = {}
+        pubmed_ids = []
+        pdb_ids = []
+        downloaded_files = []
+        cleaned_files = []
+        pdb_info = []
+        compound_data = None
+        gene_id = None
+        docking_results = []
+
+        # PubMed Search
+        if "search_pubmed" in selected_tools:
+            print(f"\n[PubMed] Searching for papers on: {topic}")
+            pubmed_ids = get_pubmed(topic)
+            if pubmed_ids:
+                print(f"[PubMed] Found {len(pubmed_ids)} paper IDs:")
+                for pid in pubmed_ids[:5]:
+                    print(f"  - https://pubmed.ncbi.nlm.nih.gov/{pid}/")
+            else:
+                print("[PubMed] No papers found.")
+
+        # PDB Search
+        if "search_pdb" in selected_tools:
+            print(f"\n[PDB] Searching protein structures for: {topic}")
+            pdb_ids = search_pdb(topic)
+            if pdb_ids:
+                print(f"[PDB] Found {len(pdb_ids)} structures:")
+                for pdb in pdb_ids:
+                    print(f"  - https://www.rcsb.org/structure/{pdb}")
+
+                # Download PDB files
+                print("\n[PDB] Downloading structure files...")
+                downloaded_files = download_structures(pdb_ids)
+                print(f"[PDB] Downloaded {len(downloaded_files)} files:")
+                for f in downloaded_files:
+                    print(f"  - {f}")
+
+                # Extract PDB info
+                for f in downloaded_files:
+                    info = extract_pdb_info(f)
+                    pdb_info.append(info)
+                    if info:
+                        print(f"\n[PDB Info] {os.path.basename(f)}:")
+                        print(f"  Protein : {info['protein_name']}")
+                        print(f"  Chains  : {info['num_chains']}")
+                        print(f"  Residues: {info['num_residues']}")
+                        print(f"  Atoms   : {info['num_atoms']}")
+            else:
+                print("[PDB] No structures found.")
+
+        # PDB Cleaning
+        if "clean_pdb" in selected_tools and downloaded_files:
+            print(f"\n[PDB Cleaner] Cleaning {len(downloaded_files)} PDB files...")
+            cleaned_files = clean_pdb_files(downloaded_files)
+            print(f"[PDB Cleaner] Cleaned {len(cleaned_files)} files.")
+
+        # PubChem Search
+        if "get_pubchem" in selected_tools:
+            print(f"\n[PubChem] Fetching compound info for: {topic}")
+            compound_data = get_pubchem(topic)
+            if compound_data:
+                print(f"[PubChem] Compound : {compound_data['compound']}")
+                print(f"[PubChem] Formula  : {compound_data['formula']}")
+                print(f"[PubChem] Weight   : {compound_data['weight']} g/mol")
+            else:
+                print("[PubChem] No compound data found.")
+
+        # NCBI Gene Search
+        if "get_gene" in selected_tools:
+            print(f"\n[NCBI] Searching gene info for: {topic}")
+            gene_id = get_gene(topic)
+            if gene_id:
+                print(f"[NCBI] Gene ID: {gene_id}")
+                print(f"[NCBI] Link   : https://www.ncbi.nlm.nih.gov/gene/{gene_id}")
+            else:
+                print("[NCBI] No gene found.")
+
+        # Docking Pipeline
+        if "run_docking" in selected_tools and cleaned_files and compound_data:
+            print(f"\n[Docking] Starting automated docking pipeline...")
+            docking_results = run_docking_pipeline(topic, cleaned_files)
+            if docking_results:
+                print("\n[Docking] Results:")
+                for dr in docking_results:
+                    print(f"  - {dr}")
+
+        # ============================
+        # Step 5: RAG Pipeline
+        # ============================
+        rag_results = []
 
         if pubmed_ids:
-            print(f"[PubMed] Found {len(pubmed_ids)} paper IDs:")
-            for pid in pubmed_ids[:5]:
-                print(f"  - https://pubmed.ncbi.nlm.nih.gov/{pid}/")
-        else:
-            print("[PubMed] No papers found.")
+            print(f"\n[RAG] Fetching abstracts for knowledge base...")
+            abstracts = fetch_pubmed_abstracts(pubmed_ids)
+
+            if abstracts:
+                print(f"[RAG] Retrieved {len(abstracts)} abstracts with metadata.")
+                print("[RAG] Building vector knowledge base...")
+                index, texts, metadata = create_vector_database(abstracts)
+                print(f"[RAG] Knowledge base ready with {index.ntotal} documents.")
+
+                rag_results = search_vector_database(
+                    question, index, texts, metadata, top_k=3
+                )
+
+                print("\n[RAG] Top Relevant Papers:")
+                for i, r in enumerate(rag_results, 1):
+                    meta = r["metadata"]
+                    print(f"\n  Result {i}:")
+                    print(f"  Title  : {meta['title']}")
+                    print(f"  Authors: {meta['authors']}")
+                    print(f"  Journal: {meta['journal']}")
+                    print(f"  Year   : {meta['year']}")
+                    print(f"  Link   : https://pubmed.ncbi.nlm.nih.gov/{meta['id']}/")
+            else:
+                print("[RAG] Could not retrieve abstracts.")
 
         # ============================
-        # Step 3: PDB Structure Search
+        # Step 6: Collect All Data
         # ============================
-        print(f"\n[PDB] Searching protein structures for: {topic}")
-        pdb_ids = search_pdb(topic)
-
-        if pdb_ids:
-            print(f"[PDB] Found {len(pdb_ids)} structures:")
-            for pdb in pdb_ids:
-                print(f"  - https://www.rcsb.org/structure/{pdb}")
-
-            print("\n[PDB] Downloading structure files...")
-            downloaded = download_structures(pdb_ids)
-            print(f"[PDB] Downloaded {len(downloaded)} files:")
-            for f in downloaded:
-                print(f"  - {f}")
-        else:
-            print("[PDB] No structures found.")
-            pdb_ids = []
+        collected_data = {
+            "pubmed_abstracts": rag_results,
+            "compound_data": compound_data,
+            "gene_id": gene_id,
+            "pdb_ids": pdb_ids,
+            "pdb_info": pdb_info,
+            "docking_results": docking_results
+        }
 
         # ============================
-        # Step 4: PubChem Compound Info
+        # Step 7: Synthesize Final Answer
         # ============================
-        print(f"\n[PubChem] Fetching compound info for: {topic}")
-        compound_data = get_pubchem(topic)
-
-        if compound_data:
-            print(f"[PubChem] Compound: {compound_data['compound']}")
-            print(f"[PubChem] Formula:  {compound_data['formula']}")
-            print(f"[PubChem] Weight:   {compound_data['weight']} g/mol")
-        else:
-            print("[PubChem] No compound data found.")
-
-        # ============================
-        # Step 5: NCBI Gene Info
-        # ============================
-        print(f"\n[NCBI] Searching gene info for: {topic}")
-        gene_id = get_gene(topic)
-
-        if gene_id:
-            print(f"[NCBI] Gene ID: {gene_id}")
-            print(f"[NCBI] Link: https://www.ncbi.nlm.nih.gov/gene/{gene_id}")
-        else:
-            print("[NCBI] No gene found.")
-
-        # ============================
-        # Step 6: RAG - Fetch Abstracts
-        # ============================
-        print(f"\n[RAG] Fetching abstracts for knowledge base...")
-        abstracts = fetch_pubmed_abstracts(pubmed_ids)
-
-        if not abstracts:
-            print("[RAG] Could not retrieve abstracts.")
-            continue
-
-        print(f"[RAG] Retrieved {len(abstracts)} abstracts.")
-        print("[RAG] Building knowledge base...")
-        index, texts = create_vector_database(abstracts)
-        print(f"[RAG] Knowledge base ready with {index.ntotal} documents.")
-
-        results = search_vector_database(question, index, texts)
-        context = "\n\n".join(results)
-
-        # ============================
-        # Step 7: Groq AI Answer
-        # ============================
-        print("\n[Groq] Generating AI answer...\n")
-        answer = ask_groq(
-            groq_client,
-            context,
-            question,
-            compound_data=compound_data,
-            gene_id=gene_id,
-            pdb_ids=pdb_ids
-        )
+        print("\n[Groq AI] Synthesizing final answer...\n")
+        answer = synthesize_answer(question, collected_data, groq_client)
 
         print("=" * 60)
         print("SCIENTIFIC ANSWER")
         print("=" * 60)
         print(answer)
+        print("=" * 60)
 
         # ============================
-        # Structured Data Summary
+        # Step 8: Generate Report
         # ============================
-        print("\n--- Compound Data ---")
-        if compound_data:
-            print(f"{topic.capitalize()} — Formula: {compound_data['formula']}, "
-                  f"Weight: {compound_data['weight']} g/mol")
-        else:
-            print("No compound data available.")
+        print("\n[Report] Generating full report...")
+        report_file = generate_report(
+            question=question,
+            topic=topic,
+            answer=answer,
+            compound_data=compound_data,
+            gene_id=gene_id,
+            pdb_ids=pdb_ids,
+            pubmed_ids=pubmed_ids,
+            downloaded_files=downloaded_files,
+            cleaned_files=cleaned_files,
+            pdb_info=pdb_info,
+            rag_results=rag_results,
+            docking_results=docking_results
+        )
 
-        print("\n--- Gene Association ---")
-        if gene_id:
-            print(f"NCBI Gene ID: {gene_id}")
-            print(f"Link: https://www.ncbi.nlm.nih.gov/gene/{gene_id}")
-        else:
-            print("No gene data available.")
-
-        print("\n--- Protein Structures ---")
-        if pdb_ids:
-            for pdb in pdb_ids:
-                print(f"  - {pdb}: https://www.rcsb.org/structure/{pdb}")
-        else:
-            print("No protein structures found.")
-
+        print(f"[Report] Full report saved to: {report_file}")
         print("\n" + "=" * 60)
 
 
