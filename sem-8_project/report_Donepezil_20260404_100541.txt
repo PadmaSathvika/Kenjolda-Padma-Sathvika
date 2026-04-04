@@ -1,0 +1,50 @@
+======================================================================
+       AgentDKI DRUG DISCOVERY RESEARCH REPORT
+======================================================================
+Generated On  : 2026-04-04 10:05:41
+Query         : What is the molecular weight and clinical phase of Donepezil?
+Topic         : Donepezil
+======================================================================
+
+SCIENTIFIC ANSWER
+----------------------------------------------------------------------
+Could not synthesize answer: Error code: 404 - [{'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1main, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}]
+
+COMPOUND DATA (PubChem)
+----------------------------------------------------------------------
+Name            : Donepezil
+Molecular Formula: C24H29NO3
+Molecular Weight : 379.5 g/mol
+PubChem Link     : https://pubchem.ncbi.nlm.nih.gov/compound/Donepezil
+
+GENE DATA (NCBI)
+----------------------------------------------------------------------
+No gene data found.
+
+PROTEIN STRUCTURES (PDB)
+----------------------------------------------------------------------
+No protein structures found.
+
+DOWNLOADED PDB FILES
+----------------------------------------------------------------------
+No files downloaded.
+
+CLEANED PDB FILES
+----------------------------------------------------------------------
+No cleaned files.
+
+MOLECULAR DOCKING RESULTS
+----------------------------------------------------------------------
+No docking results available.
+
+PUBMED PAPERS
+----------------------------------------------------------------------
+No papers found.
+
+TOP RELEVANT RESEARCH ABSTRACTS (RAG)
+----------------------------------------------------------------------
+No RAG results available.
+
+======================================================================
+END OF REPORT
+======================================================================

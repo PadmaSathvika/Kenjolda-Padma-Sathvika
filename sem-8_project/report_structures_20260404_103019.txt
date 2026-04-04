@@ -1,0 +1,88 @@
+======================================================================
+       AgentDKI DRUG DISCOVERY RESEARCH REPORT
+======================================================================
+Generated On  : 2026-04-04 10:30:19
+Query         : I drink way too much coffee. Can you look up the chemical formula for Caffeine, and are there any 3D protein structures related to how it binds in the body?
+Topic         : structures
+======================================================================
+
+SCIENTIFIC ANSWER
+----------------------------------------------------------------------
+Could not synthesize answer: Error code: 404 - [{'error': {'code': 404, 'message': 'models/gemini-3-flash is not found for API version v1main, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}]
+
+COMPOUND DATA (PubChem)
+----------------------------------------------------------------------
+No compound data found.
+
+GENE DATA (NCBI)
+----------------------------------------------------------------------
+No gene data found.
+
+PROTEIN STRUCTURES (PDB)
+----------------------------------------------------------------------
+Structure 1  : 1PYH
+PDB Link     : https://www.rcsb.org/structure/1PYH
+Protein Name : LIGHT-HARVESTING PROTEIN B-800/850, BETA CHAIN
+Chains       : 34
+Residues     : 1690
+Atoms        : 8295
+
+Structure 2  : 3N99
+PDB Link     : https://www.rcsb.org/structure/3N99
+Protein Name : UNCHARACTERIZED PROTEIN TM1086
+Chains       : 30
+Residues     : 8462
+Atoms        : 63491
+
+Structure 3  : 1PDM
+PDB Link     : https://www.rcsb.org/structure/1PDM
+Protein Name : BASEPLATE STRUCTURAL PROTEIN GP8
+Chains       : 12
+Residues     : 3936
+Atoms        : 3936
+
+Structure 4  : 1PDF
+PDB Link     : https://www.rcsb.org/structure/1PDF
+Protein Name : BASEPLATE STRUCTURAL PROTEIN GP11
+Chains       : 18
+Residues     : 3744
+Atoms        : 3744
+
+Structure 5  : 1PDP
+PDB Link     : https://www.rcsb.org/structure/1PDP
+Protein Name : BASEPLATE STRUCTURAL PROTEIN GP9
+Chains       : 18
+Residues     : 5184
+Atoms        : 5184
+
+DOWNLOADED PDB FILES
+----------------------------------------------------------------------
+  - pdb_files\1PYH.pdb
+  - pdb_files\3N99.pdb
+  - pdb_files\1PDM.pdb
+  - pdb_files\1PDF.pdb
+  - pdb_files\1PDP.pdb
+
+CLEANED PDB FILES
+----------------------------------------------------------------------
+  - pdb_files\1PYH_cleaned.pdb
+  - pdb_files\3N99_cleaned.pdb
+  - pdb_files\1PDM_cleaned.pdb
+  - pdb_files\1PDF_cleaned.pdb
+  - pdb_files\1PDP_cleaned.pdb
+
+MOLECULAR DOCKING RESULTS
+----------------------------------------------------------------------
+No docking results available.
+
+PUBMED PAPERS
+----------------------------------------------------------------------
+No papers found.
+
+TOP RELEVANT RESEARCH ABSTRACTS (RAG)
+----------------------------------------------------------------------
+No RAG results available.
+
+======================================================================
+END OF REPORT
+======================================================================

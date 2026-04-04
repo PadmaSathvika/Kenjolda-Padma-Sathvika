@@ -1,0 +1,50 @@
+======================================================================
+       AgentDKI DRUG DISCOVERY RESEARCH REPORT
+======================================================================
+Generated On  : 2026-04-04 10:47:37
+Query         : What is the molecular weight, formula, and clinical phase of Ibuprofen?
+Topic         : Ibuprofen
+======================================================================
+
+SCIENTIFIC ANSWER
+----------------------------------------------------------------------
+Hello there! It is so wonderful to see you diving into the fascinating world of drug discovery. You are
+
+COMPOUND DATA (PubChem)
+----------------------------------------------------------------------
+Name            : Ibuprofen
+Molecular Formula: C13H18O2
+Molecular Weight : 206.28 g/mol
+PubChem Link     : https://pubchem.ncbi.nlm.nih.gov/compound/Ibuprofen
+
+GENE DATA (NCBI)
+----------------------------------------------------------------------
+No gene data found.
+
+PROTEIN STRUCTURES (PDB)
+----------------------------------------------------------------------
+No protein structures found.
+
+DOWNLOADED PDB FILES
+----------------------------------------------------------------------
+No files downloaded.
+
+CLEANED PDB FILES
+----------------------------------------------------------------------
+No cleaned files.
+
+MOLECULAR DOCKING RESULTS
+----------------------------------------------------------------------
+No docking results available.
+
+PUBMED PAPERS
+----------------------------------------------------------------------
+No papers found.
+
+TOP RELEVANT RESEARCH ABSTRACTS (RAG)
+----------------------------------------------------------------------
+No RAG results available.
+
+======================================================================
+END OF REPORT
+======================================================================
