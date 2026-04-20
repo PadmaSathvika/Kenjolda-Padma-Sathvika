@@ -2,16 +2,20 @@ import os
 from datetime import datetime
 
 
+
 # ============================
 # Generate full report
 # ============================
+
 
 def generate_report(question, topic, answer, compound_data, gene_id,
                     pdb_ids, pubmed_ids, downloaded_files,
                     cleaned_files, pdb_info, rag_results, docking_results=None):
 
+
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     report_filename = f"report_{topic}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+
 
     report = ""
     report += "=" * 70 + "\n"
@@ -22,12 +26,14 @@ def generate_report(question, topic, answer, compound_data, gene_id,
     report += f"Topic         : {topic}\n"
     report += "=" * 70 + "\n\n"
 
+
     # ============================
     # Scientific Answer
     # ============================
     report += "SCIENTIFIC ANSWER\n"
     report += "-" * 70 + "\n"
     report += f"{answer}\n\n"
+
 
     # ============================
     # Compound Data
@@ -43,6 +49,7 @@ def generate_report(question, topic, answer, compound_data, gene_id,
         report += "No compound data found.\n"
     report += "\n"
 
+
     # ============================
     # Gene Data
     # ============================
@@ -54,6 +61,7 @@ def generate_report(question, topic, answer, compound_data, gene_id,
     else:
         report += "No gene data found.\n"
     report += "\n"
+
 
     # ============================
     # Protein Structures
@@ -74,6 +82,7 @@ def generate_report(question, topic, answer, compound_data, gene_id,
     else:
         report += "No protein structures found.\n\n"
 
+
     # ============================
     # Downloaded & Cleaned Files
     # ============================
@@ -86,6 +95,7 @@ def generate_report(question, topic, answer, compound_data, gene_id,
         report += "No files downloaded.\n"
     report += "\n"
 
+
     report += "CLEANED PDB FILES\n"
     report += "-" * 70 + "\n"
     if cleaned_files:
@@ -94,6 +104,7 @@ def generate_report(question, topic, answer, compound_data, gene_id,
     else:
         report += "No cleaned files.\n"
     report += "\n"
+
 
     # ============================
     # Docking Results
@@ -107,6 +118,7 @@ def generate_report(question, topic, answer, compound_data, gene_id,
         report += "No docking results available.\n"
     report += "\n"
 
+
     # ============================
     # PubMed Papers
     # ============================
@@ -118,6 +130,7 @@ def generate_report(question, topic, answer, compound_data, gene_id,
     else:
         report += "No papers found.\n"
     report += "\n"
+
 
     # ============================
     # RAG Results with Metadata
@@ -138,14 +151,18 @@ def generate_report(question, topic, answer, compound_data, gene_id,
         report += "No RAG results available.\n"
     report += "\n"
 
+
     report += "=" * 70 + "\n"
     report += "END OF REPORT\n"
     report += "=" * 70 + "\n"
+
 
     # Save report
     with open(report_filename, "w", encoding="utf-8") as f:
         f.write(report)
 
+
     print(f"\n[Report] Saved to: {report_filename}")
+
 
     return report_filename

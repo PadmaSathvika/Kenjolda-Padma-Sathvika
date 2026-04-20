@@ -1,5 +1,6 @@
 import requests
 
+
 def search_chembl(query):
     """
     Searches the ChEMBL database for molecules and bioactivity data

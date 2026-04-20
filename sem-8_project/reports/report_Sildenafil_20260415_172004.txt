@@ -1,0 +1,58 @@
+================================================================================
+AUTOMATED DRUG DISCOVERY REPORT
+================================================================================
+Generated on: 2026-04-15 17:20:04
+Topic: Sildenafil
+Question: Sildenafil
+
+SUMMARY
+--------------------------------------------------------------------------------
+Hello! It is a pleasure to walk through the data for your drug discovery pipeline. We are looking at **Sildenafil**, a well-established potent inhibitor of cGMP-specific phosphodiesterase type 5 (**PDE5**, Gene ID: **8664**), which is primarily used to treat erectile dysfunction and pulmonary arterial hypertension.
+
+The compound has a molecular formula of **C₂₂H₃₀N₆O₄S** and a molecular weight of **474.6 g/mol**. Our ChEMBL database cross-referencing identifies several entries, most notably **CHEMBL192** and **CHEMBL1737**, both of which are listed as **Phase 4**. This confirms its status as a fully approved, marketed therapeutic with a robust clinical safety profile.
+
+Recent scientific literature from 2026 highlights evolving research into delivery methods and physiological impacts. Studies have moved toward optimizing patient satisfaction by comparing **oral suspensions** to traditional tablets and investigating Sildenafil’s effect on **diffusing capacity** during exercise in both trained and untrained individuals. This suggests that while the drug is mature, there is still significant interest in expanding its clinical utility and improving patient adherence.
+
+In your pipeline, Sildenafil serves as an excellent reference molecule for PDE5 inhibition. While the current data focuses on clinical literature and chemical properties, further integration of structural data would allow for a deeper look into its binding affinity within the catalytic domain of the PDE5 enzyme.
+
+COMPOUND DATA
+--------------------------------------------------------------------------------
+Compound: Sildenafil
+Formula: C22H30N6O4S
+Weight: 474.6
+SMILES: N/A
+PubChem CID: N/A
+
+GENE DATA
+--------------------------------------------------------------------------------
+NCBI Gene ID: N/A
+
+PUBMED RESULTS
+--------------------------------------------------------------------------------
+1. Oral suspension versus tablet sildenafil for erectile dysfunction: a prospective multicenter comparative study on patient satisfaction. (PMID: 41957511, Year: 2026, Score: 0.8694)
+2. Low-intensity shockwave therapy and pelvic floor muscle training each mitigate erectile dysfunction in men with diabetes: a randomised controlled trial. (PMID: 41933953, Year: 2026, Score: 0.9353)
+3. The effect of sildenafil on resting and exercise diffusing capacity in trained and untrained individuals: A randomized crossover trial. (PMID: 41940809, Year: 2026, Score: 0.9900)
+
+PDB STRUCTURES
+--------------------------------------------------------------------------------
+N/A
+
+PDB IDS
+--------------------------------------------------------------------------------
+N/A
+
+DOWNLOADED FILES
+--------------------------------------------------------------------------------
+N/A
+
+CLEANED FILES
+--------------------------------------------------------------------------------
+N/A
+
+DOCKING RESULTS
+--------------------------------------------------------------------------------
+N/A
+
+FINAL NOTES
+--------------------------------------------------------------------------------
+This report was generated automatically from integrated biomedical search and analysis modules.
